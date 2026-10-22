@@ -6,7 +6,6 @@ expo-env.d.ts
 *.tsbuildinfo
 .env
 .env.*
-!.env.example
 ios/
 android/
 *.log

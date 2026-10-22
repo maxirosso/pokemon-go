@@ -99,7 +99,7 @@ Everything below is **optional**; without it the AI screen answers from the onâ€
    ```
 5. **Point the app at your project** with the *public* values only:
    ```bash
-   cp .env.example .env     # then set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY
+   # create a local .env (git-ignored) containing EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY
    ```
    Restart `npx expo start` (add `-c` to clear the cache). Settings â†’ Cloud shows the connection status.
 

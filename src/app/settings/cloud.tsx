@@ -53,7 +53,7 @@ export default function CloudSettings() {
         </View>
         {!configured ? (
           <Text variant="small" color="secondary">
-            Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY (see .env.example), deploy the gemini-coach Edge Function and add your GEMINI_API_KEY as a function secret. Step-by-step instructions are in DEVELOPMENT.md. Until then the assistant answers common questions offline.
+            Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY in a local .env file, deploy the gemini-coach Edge Function and add your GEMINI_API_KEY as a function secret. Step-by-step instructions are in DEVELOPMENT.md. Until then the assistant answers common questions offline.
           </Text>
         ) : (
           <Text variant="small" color="secondary">Connected to your Supabase project. Guests get an anonymous session used only for rate limiting.</Text>
