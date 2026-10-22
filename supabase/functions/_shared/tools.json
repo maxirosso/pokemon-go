@@ -1,0 +1,90 @@
+[
+  {
+    "name": "get_account_summary",
+    "description": "Overview of the player's account: trainer level, goals, collection counts, data quality (how many Pokémon have IVs/CP), readiness scores, resources entered (Stardust, Rare Candy) and the reference-data version. Call this first for broad questions.",
+    "parameters": { "type": "OBJECT", "properties": {} }
+  },
+  {
+    "name": "list_pokemon",
+    "description": "List the player's own Pokémon (compact rows with id, species, CP, IVs, level, verdict action and impact). Supports a search expression like 'fire&4*', 'shadow', 'cp1500-', 'iv90-', 'lucario'.",
+    "parameters": {
+      "type": "OBJECT",
+      "properties": {
+        "query": { "type": "STRING", "description": "Optional search expression." },
+        "sort": { "type": "STRING", "enum": ["investment", "cp", "iv", "raid", "pvp", "recent"], "description": "Sort order (default investment)." },
+        "limit": { "type": "INTEGER", "description": "Max rows, default 10, max 25." }
+      }
+    }
+  },
+  {
+    "name": "get_pokemon_analysis",
+    "description": "Full deterministic analysis of ONE owned Pokémon by id: verdict (action, cost, when, benefit, explanation), role ratings (raid, gym, Great/Ultra/Master League: now vs potential, tier), evidence list and better alternatives already owned.",
+    "parameters": {
+      "type": "OBJECT",
+      "properties": { "pokemon_id": { "type": "STRING", "description": "The id returned by list_pokemon." } },
+      "required": ["pokemon_id"]
+    }
+  },
+  {
+    "name": "get_top_priorities",
+    "description": "The ranked list of the best investments right now (power-ups, evolutions, move changes, PvP builds) with costs and benefits, plus the today/this-week/long-term roadmap.",
+    "parameters": { "type": "OBJECT", "properties": { "limit": { "type": "INTEGER", "description": "Max priorities, default 5." } } }
+  },
+  {
+    "name": "plan_budget",
+    "description": "Budget planner: given an amount of Stardust, returns three plans (cheapest useful, balanced, maximum long-term) chosen from the player's actual collection under Stardust and Candy constraints.",
+    "parameters": {
+      "type": "OBJECT",
+      "properties": { "stardust": { "type": "INTEGER", "description": "Stardust budget." } },
+      "required": ["stardust"]
+    }
+  },
+  {
+    "name": "build_raid_team",
+    "description": "Best six counters from the player's collection against a raid boss (by species name), with moves, estimated damage score, move-change advice, coverage gaps and a relative team estimate. Not a full simulation.",
+    "parameters": {
+      "type": "OBJECT",
+      "properties": {
+        "boss": { "type": "STRING", "description": "Boss species name, e.g. 'Mewtwo'." },
+        "tier": { "type": "STRING", "description": "Raid tier: 1,3,4,5,mega,mega_legendary. Default 5 for legendary bosses, otherwise 3." },
+        "weather": { "type": "STRING", "description": "Optional weather: Clear, Fog, Overcast, Partly Cloudy, Rainy, Snow, Windy." }
+      },
+      "required": ["boss"]
+    }
+  },
+  {
+    "name": "get_pvp_candidates",
+    "description": "The player's best Pokémon for a PvP league ranked by suitability (IV stat-product rank + meta score), with the level/CP to power up to and the cost.",
+    "parameters": {
+      "type": "OBJECT",
+      "properties": {
+        "league": { "type": "STRING", "enum": ["great", "ultra", "master", "little"] },
+        "limit": { "type": "INTEGER", "description": "Max rows, default 8." }
+      },
+      "required": ["league"]
+    }
+  },
+  {
+    "name": "compare_pokemon",
+    "description": "Compare two owned Pokémon (by id) across raid, gym and PvP roles and verdicts.",
+    "parameters": {
+      "type": "OBJECT",
+      "properties": { "pokemon_id_a": { "type": "STRING" }, "pokemon_id_b": { "type": "STRING" } },
+      "required": ["pokemon_id_a", "pokemon_id_b"]
+    }
+  },
+  {
+    "name": "get_species_info",
+    "description": "Pokémon GO facts for a species (not necessarily owned): base stats, types, evolutions with Candy cost, move pool, raid rank estimate, PvP meta scores and best IV spreads per league.",
+    "parameters": {
+      "type": "OBJECT",
+      "properties": { "name": { "type": "STRING", "description": "Species name, e.g. 'Charmander'." } },
+      "required": ["name"]
+    }
+  },
+  {
+    "name": "find_pvp_only_pokemon",
+    "description": "Owned Pokémon that are weak for raids but strong for PvP (raid potential low, a league suitability high) — the 'useless for raids but valuable in PvP' list.",
+    "parameters": { "type": "OBJECT", "properties": {} }
+  }
+]

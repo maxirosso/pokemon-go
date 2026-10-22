@@ -1,56 +1,106 @@
-# Welcome to your Expo app 👋
+# GO Compass
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+> *Open the app. It knows which Pokémon you have, analyses their value, and tells you exactly what to do next — and why.*
 
-## Get started
+GO Compass is an **unofficial**, offline-first companion app for Pokémon GO players, built with React Native + Expo + TypeScript. It is not affiliated with, endorsed by or connected to Niantic, Nintendo, The Pokémon Company or Game Freak. See [Legal & privacy](#legal--privacy).
 
-1. Install dependencies
+You tell the app what you own (manually, from screenshots, or from a CSV/JSON file). A deterministic TypeScript engine — grounded in real Pokémon GO mechanics and versioned game data — rates every Pokémon for raids, gyms, PvP and general use, then ranks what you should power up, evolve, trade, keep or transfer, given your actual resources and goals. Every verdict lists the evidence behind it, and says plainly when your data is incomplete.
 
-   ```bash
-   npm install
-   ```
+## Highlights
 
-2. Start the app
+- **Recommendations you can audit** – each verdict (power up / evolve / keep / transfer…) shows its evidence, confidence and the dataset version it used. Unknown IVs are never guessed as 15/15/15 or 0/0/0; the app shows ranges and what extra information would narrow them.
+- **Collection manager** – many separate records per species, filters, sorts, tags, favourites, a Pokémon GO‑style search subset (e.g. `fire&!shiny, water&4*`), soft deletion with "Recently deleted".
+- **Add / import** – manual add with IV sliders and honest level estimation (CP + HP → candidate levels); screenshot import with on‑device OCR and a mandatory editable review step; CSV / JSON import; backup & restore.
+- **Account‑wide strategy** – priorities, a budget planner with three plans, resource tracking (Stardust, candy, XL candy…), evolution advisor and power‑up calculator.
+- **Raid assistant** – best six counters *from your own Pokémon* for a boss, with weather / friendship / mega modifiers. Results are model estimates, not promises.
+- **PvP** – stat‑product IV ranking for Great / Ultra / Master (and Little) league, league suitability, 1v1 simulator, team builder with threat/coverage analysis.
+- **Pokédex** (separate from your collection), species detail with artwork, evolution trees, type coverage.
+- **AI coach (optional)** – Gemini via a Supabase Edge Function. Gemini never sees your database; it can only call a fixed set of read‑only app tools. Without internet / backend, the app answers from the same tools locally.
+- **Premium dark design ("Midnight Orbit")** with a light theme, reduced‑motion support, English and Spanish.
+- **Local notifications only** – opt‑in reminders built from *your own* plan and milestones. No fake "live event" notices.
 
-   ```bash
-   npx expo start
-   ```
+## Quick start
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+Requirements: Node 20+, npm, and either the Expo Go app or an Android/iOS simulator.
 
 ```bash
-npm run reset-project
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+Then press `a` (Android), `i` (iOS), `w` (web) or scan the QR code with Expo Go.
 
-### Other setup steps
+The app works completely offline from first launch: a validated reference snapshot (game data + PvP rankings) is bundled and later refreshed in the background.
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+### Development build (needed for on‑device OCR)
 
-## Learn more
+Screenshot OCR uses Google ML Kit text recognition, which is a **native module and does not run in Expo Go or on web**. Everything else does. To try OCR:
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+npm run run:android      # expo run:android  (needs Android Studio + SDK)
+npm run run:ios          # expo run:ios      (macOS + Xcode)
+# or cloud builds:
+npx eas build --profile development --platform android
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+In Expo Go / web the screenshot screen degrades gracefully: you can still pick images and type the values into the same review form.
 
-## Join the community
+### Useful scripts
 
-Join our community of developers creating universal apps.
+| Command | What it does |
+|---|---|
+| `npm run check` | typecheck + lint + all tests |
+| `npm test` | Jest unit / integration / component tests |
+| `npm run snapshot:reference` | Re‑download and re‑validate the bundled reference snapshot |
+| `npm run e2e:web` | Playwright web end‑to‑end tests in `e2e/` (needs Google Chrome) |
+| `npm run e2e` | Maestro flows in `.maestro/` (needs a running dev build + Maestro CLI) |
+| `npm run icons` | Regenerate app icons (`python`, Pillow) |
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Full developer guide, including Supabase + Gemini setup: [DEVELOPMENT.md](DEVELOPMENT.md).
+
+## Feature status — honest matrix
+
+| Area | Status | Notes |
+|---|---|---|
+| Onboarding, guest mode, profile & goals | ✅ Complete | |
+| Collection manager, filters, search, tags, soft delete | ✅ Complete | Search is a documented *subset* of GO's syntax |
+| Manual add with IV sliders / level estimation | ✅ Complete | |
+| Pokémon detail, role ratings, explainable verdicts | ✅ Complete | Ratings are *estimates* (see GAME_MECHANICS.md) |
+| Recommendation engine, account analysis, roadmap, budget plans | ✅ Complete | Deterministic and unit‑tested |
+| Evolution advisor, power‑up calculator | ✅ Complete | Shadow / purified / lucky costs use documented approximations |
+| Raid assistant | ✅ Complete | Analytical model; boss HP/level per tier are model constants |
+| PvP rankings, simulator, team builder | ✅ Complete | Meta ratings from PvPoke; simulator is a simplified 1v1 |
+| Pokédex, species info, artwork | ✅ Complete | Artwork needs network (PokéAPI / cached after first view) |
+| Backup / restore / CSV / JSON import / reset | ✅ Complete | |
+| Reference data update with last‑known‑good fallback | ✅ Complete | Atomic, validated, versioned |
+| EN / ES localisation | 🟡 Partial | Core flows translated; some deep‑detail strings are English only |
+| Screenshot OCR import | 🟡 Partial | Requires a **dev build** (native ML Kit); parsing heuristics are English‑oriented; always user‑reviewed |
+| Local notifications | 🟡 Partial | Scheduling works on device; web has no support |
+| AI coach (Gemini) | 🟡 Needs your setup | Code complete. Requires **your** Supabase project + Gemini key; free‑tier quotas apply and change over time |
+| AI screenshot analysis (Gemini vision) | 🟡 Needs your setup | Opt‑in with explicit consent each time; result goes to the same review step |
+| Cloud backup (Supabase) | 🟡 Needs your setup | Optional; local backup works without it |
+| Web E2E (Playwright) | ✅ Passing | 16 tests: onboarding, add Pokémon, advisor (web build, Chrome) |
+| Maestro E2E (native) | 🟡 Not run | Two starter flows written; never executed (needs Maestro + a device/emulator) |
+| Native device testing (real iOS / Android hardware) | ❌ Not verified | Automated tests run under Jest/Node; UI was smoke‑tested on web only |
+| Pokémon GO account connection | ⛔ Intentionally unavailable | There is no official API. See below |
+
+## What is deliberately NOT in this app
+
+No login with a Pokémon GO account, no credential entry, no session‑token extraction, no private/reverse‑engineered endpoints, no location spoofing, no botting, and no misleading "Connect Pokémon GO" button. Your collection comes only from what **you** enter or import. The demo collection is clearly labelled "demo" and can be removed in one tap.
+
+## Documentation
+
+- [ARCHITECTURE.md](ARCHITECTURE.md) – layers, data flow, database, AI design
+- [DATA_SOURCES.md](DATA_SOURCES.md) – every external source, licensing caveats, freshness
+- [GAME_MECHANICS.md](GAME_MECHANICS.md) – formulas, model constants, known approximations
+- [DEVELOPMENT.md](DEVELOPMENT.md) – setup, testing, Supabase/Gemini, release notes
+
+## Legal & privacy
+
+- **Unofficial.** Pokémon and Pokémon GO are trademarks of their respective owners. Names and artwork are used for identification only. Before publishing to a store, review trademark/IP exposure of the app name, icon and artwork (see DATA_SOURCES.md).
+- **Privacy.** Data stays on your device by default. Screenshots are processed locally unless you explicitly opt in to cloud analysis. The Gemini API key never ships in the app; only the public Supabase URL and anon key do.
+- **Attributions.** PoGoAPI, PvPoke, PokéAPI — see DATA_SOURCES.md and the in‑app About screen.
+
+## License
+
+No license has been chosen for GO Compass yet. The `LICENSE` file in this repository is the MIT text inherited from the Expo project template (copyright 650 Industries) and does **not** describe this app's own terms — replace it with the license you want before publishing.

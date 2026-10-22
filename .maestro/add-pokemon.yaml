@@ -1,0 +1,14 @@
+# Add a Pokémon manually and see its verdict.
+appId: app.gocompass.companion
+---
+- launchApp
+- tapOn: "Collection"
+- tapOn:
+    id: "fab-add"
+- inputText: "Lucario"
+- tapOn: "Lucario"
+- scrollUntilVisible:
+    element: "Save to collection"
+- tapOn:
+    id: "save-pokemon"
+- assertVisible: "TACTICAL ASSESSMENT"

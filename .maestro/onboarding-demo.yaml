@@ -1,0 +1,23 @@
+# End-to-end smoke test: first launch → onboarding → demo collection → recommendation visible.
+# Run against a development build:  maestro test .maestro
+appId: app.gocompass.companion
+---
+- clearState
+- launchApp
+- assertVisible: "Your Pokémon collection."
+- tapOn: "Get started"
+- tapOn:
+    id: "Trainer nickname"
+    optional: true
+- inputText: "Maestro"
+- tapOn: "TRAINER LEVEL"
+- inputText: "45"
+- tapOn: "Continue"
+- tapOn: "Skip — balanced advice"
+- tapOn: "Explore a demo collection"
+- assertVisible: "Trainer Maestro"
+- assertVisible: "demo Pokémon"
+- tapOn: "Collection"
+- assertVisible: "Lucario"
+- tapOn: "Advisor"
+- assertVisible: "Strategy advisor"
