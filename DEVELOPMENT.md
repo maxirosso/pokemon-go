@@ -75,9 +75,21 @@ npm run snapshot:reference
 
 It downloads PoGoAPI + PvPoke files, minifies them and writes `manifest.json` (SHA‑256 per file). Re‑run before each release, then `npm test` — the reference and mechanics tests catch schema drift and implausible values. Runtime refresh is described in DATA_SOURCES.md.
 
-## Optional: Supabase + Gemini (AI coach, cloud backup)
+## AI coach with your own Gemini key (no backend)
 
-Everything below is **optional**; without it the AI screen answers from the on‑device tools and says the cloud coach isn't configured.
+The simplest setup, intended for a personal app: the coach calls Google Gemini **directly from your phone** using a key you paste in the app.
+
+1. Create a key in Google AI Studio (https://aistudio.google.com/apikey).
+2. In the app: **Settings → AI coach & cloud → Gemini API key → Save & test key**.
+3. That's it. The key is stored only in the device's secure storage (iOS Keychain / Android Keystore; `localStorage` on web, development only). It is never put in the code, `.env`, the SQLite database, backups/exports or git, and it travels only in the `x-goog-api-key` header to `generativelanguage.googleapis.com`.
+
+Model: `gemini-2.5-flash-lite`, falling back to `gemini-2.5-flash` (`AI_CONFIG` in `src/services/ai/config.ts`; check Google AI Studio for current model names). The coach's tools still run locally; only your question and the compact tool results go to Google. Use a key with a low quota, and revoke it in AI Studio if a device is lost — anyone with access to the unlocked device could extract it. Tests mock Google's API; the live API has not been exercised from this repository.
+
+If a key is saved, it is always used. A Supabase project (below) is only used when no key is saved on the device.
+
+## Optional: Supabase + Gemini (AI coach on a server, cloud backup)
+
+Everything below is **optional** — you only need it for cloud backup, or to keep the Gemini key on a server instead of the phone.
 
 1. **Create a Supabase project** (free tier is fine). In *Authentication → Providers*, enable **Anonymous sign‑ins** (guest mode uses it for rate limiting — no email/password).
 2. **Apply the migration** (`supabase/migrations/0001_init.sql`): `ai_usage` + `consume_ai_quota()` and `collection_backups` with Row Level Security.
@@ -89,8 +101,8 @@ Everything below is **optional**; without it the AI screen answers from the on�
 3. **Get a Gemini API key** from Google AI Studio (https://aistudio.google.com/apikey) and store it as an Edge Function **secret** — never in `.env` or the app:
    ```bash
    supabase secrets set GEMINI_API_KEY=<your-key>
-   supabase secrets set GEMINI_MODEL=gemini-2.5-flash                 # optional (default)
-   supabase secrets set GEMINI_FALLBACK_MODEL=gemini-2.5-flash-lite   # optional (default)
+   supabase secrets set GEMINI_MODEL=gemini-2.5-flash-lite            # optional (default)
+   supabase secrets set GEMINI_FALLBACK_MODEL=gemini-2.5-flash        # optional (default)
    supabase secrets set AI_HOURLY_LIMIT=20 AI_DAILY_LIMIT=120         # optional (defaults)
    ```
 4. **Deploy the function** (JWT verification stays on):

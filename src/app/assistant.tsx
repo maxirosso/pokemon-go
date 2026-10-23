@@ -14,6 +14,7 @@ import { answerLocally, SUGGESTED_QUESTIONS } from '@/features/assistant/localAn
 import { makeToolEnv } from '@/features/assistant/tools';
 import { askCoach } from '@/services/ai/coach';
 import { isAiConfigured } from '@/services/ai/config';
+import { useAiKey } from '@/store/aiKey';
 import { AiUnavailableError, coachReplySchema, ALLOWED_ROUTE, type CoachCard, type CoachReply } from '@/services/ai/protocol';
 import { getDb } from '@/services/database/db';
 import { chatRepo } from '@/services/database/repositories';
@@ -131,6 +132,7 @@ export default function Assistant() {
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState('');
   const [quota, setQuota] = useState<{ h: number | null; d: number | null } | null>(null);
+  useAiKey((s) => s.hasKey); // re-render when the key is added or removed
   const configured = isAiConfigured() && settings.aiEnabled;
 
   // restore the most recent conversation
@@ -252,12 +254,12 @@ export default function Assistant() {
         </View>
         {!configured ? (
           <Note tone="warning">
-            The AI coach needs the optional Supabase + Gemini backend ({!settings.aiEnabled ? 'turned off in Settings' : 'not configured'}). You can still ask the common questions below — they are answered on your device from the deterministic engine.
+            The AI coach needs your Gemini API key ({!settings.aiEnabled ? 'turned off in Settings' : 'add it in Settings → AI coach'}). You can still ask the common questions below — they are answered on your device from the deterministic engine.
           </Note>
         ) : !settings.hasSeenAiNotice ? (
           <Card variant="warning" style={{ gap: 6 }}>
             <Text variant="small" color="secondary">
-              Privacy: questions and the compact results of the tools the AI calls (e.g. a list of your Pokémon with CP/IVs) are sent to your Gemini backend to write the answer. Nothing else leaves your device. The AI explains computed results — it does not invent stats.
+              Privacy: questions and the compact results of the tools the AI calls (e.g. a list of your Pokémon with CP/IVs) are sent to Google Gemini (with your own API key) to write the answer. Nothing else leaves your device. The AI explains computed results — it does not invent stats.
             </Text>
             <Pressable accessibilityRole="button" onPress={() => settings.set({ hasSeenAiNotice: true })}><Text variant="small" color="accent">Got it</Text></Pressable>
           </Card>

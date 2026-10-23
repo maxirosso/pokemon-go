@@ -15,6 +15,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ToastHost } from '@/components/ui/Toast';
 import { useTheme } from '@/theme/useTheme';
+import { useAiKey } from '@/store/aiKey';
 import { useAnalysis } from '@/store/analysis';
 import { useData } from '@/store/data';
 import { useReference } from '@/store/reference';
@@ -26,6 +27,14 @@ import { notifyNow, syncReminders } from '@/services/notifications/notifications
 void SplashScreen.preventAutoHideAsync();
 
 /** Recompute recommendations (debounced) whenever the collection, resources, goals or reference data change. */
+/** Loads the user's on-device Gemini key (if any) from secure storage so the AI coach is ready on first use. */
+function AiKeyLoader() {
+  useEffect(() => {
+    void useAiKey.getState().load();
+  }, []);
+  return null;
+}
+
 function AnalysisRunner() {
   const version = useData((s) => s.version);
   const ready = useData((s) => s.ready);
@@ -123,6 +132,7 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <ThemeProvider value={navTheme}>
             <StatusBar style={isDark ? 'light' : 'dark'} />
+            <AiKeyLoader />
             <AnalysisRunner />
             <ReferenceAutoRefresh />
             <NotificationSync />

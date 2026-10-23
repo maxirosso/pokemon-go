@@ -15,7 +15,7 @@ You tell the app what you own (manually, from screenshots, or from a CSV/JSON fi
 - **Raid assistant** – best six counters *from your own Pokémon* for a boss, with weather / friendship / mega modifiers. Results are model estimates, not promises.
 - **PvP** – stat‑product IV ranking for Great / Ultra / Master (and Little) league, league suitability, 1v1 simulator, team builder with threat/coverage analysis.
 - **Pokédex** (separate from your collection), species detail with artwork, evolution trees, type coverage.
-- **AI coach (optional)** – Gemini via a Supabase Edge Function. Gemini never sees your database; it can only call a fixed set of read‑only app tools. Without internet / backend, the app answers from the same tools locally.
+- **AI coach (optional)** – Gemini Flash‑Lite using your own API key, stored only on your device (or, optionally, via a Supabase Edge Function). Gemini never sees your database; it can only call a fixed set of read‑only app tools. Without internet / backend, the app answers from the same tools locally.
 - **Premium dark design ("Midnight Orbit")** with a light theme, reduced‑motion support, English and Spanish.
 - **Local notifications only** – opt‑in reminders built from *your own* plan and milestones. No fake "live event" notices.
 
@@ -76,7 +76,7 @@ Full developer guide, including Supabase + Gemini setup: [DEVELOPMENT.md](DEVELO
 | EN / ES localisation | 🟡 Partial | Core flows translated; some deep‑detail strings are English only |
 | Screenshot OCR import | 🟡 Partial | Requires a **dev build** (native ML Kit); parsing heuristics are English‑oriented; always user‑reviewed |
 | Local notifications | 🟡 Partial | Scheduling works on device; web has no support |
-| AI coach (Gemini) | 🟡 Needs your setup | Code complete. Requires **your** Supabase project + Gemini key; free‑tier quotas apply and change over time |
+| AI coach (Gemini) | 🟡 Needs your key | Code complete and unit/e2e tested against a mocked API; **not yet run against the live Gemini API**. Paste your key in Settings (stored on the device only); free‑tier quotas apply and change over time |
 | AI screenshot analysis (Gemini vision) | 🟡 Needs your setup | Opt‑in with explicit consent each time; result goes to the same review step |
 | Cloud backup (Supabase) | 🟡 Needs your setup | Optional; local backup works without it |
 | Web E2E (Playwright) | ✅ Passing | 16 tests: onboarding, add Pokémon, advisor (web build, Chrome) |
@@ -98,7 +98,7 @@ No login with a Pokémon GO account, no credential entry, no session‑token ext
 ## Legal & privacy
 
 - **Unofficial.** Pokémon and Pokémon GO are trademarks of their respective owners. Names and artwork are used for identification only. Before publishing to a store, review trademark/IP exposure of the app name, icon and artwork (see DATA_SOURCES.md).
-- **Privacy.** Data stays on your device by default. Screenshots are processed locally unless you explicitly opt in to cloud analysis. The Gemini API key never ships in the app; only the public Supabase URL and anon key do.
+- **Privacy.** Data stays on your device by default. Screenshots are processed locally unless you explicitly opt in to cloud analysis. No Gemini key ships with the app: you enter your own, and it stays in the device's secure storage (never in code, backups or git).
 - **Attributions.** PoGoAPI, PvPoke, PokéAPI — see DATA_SOURCES.md and the in‑app About screen.
 
 ## License

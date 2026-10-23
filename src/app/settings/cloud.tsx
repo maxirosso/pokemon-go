@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, View } from 'react-native';
+import { Alert, Platform, View } from 'react-native';
 import { Button } from '@/components/ui/Button';
 import { Field, SwitchRow } from '@/components/ui/Form';
 import { Pill } from '@/components/ui/Pill';
@@ -9,17 +9,36 @@ import { Card } from '@/components/ui/Surface';
 import { Text } from '@/components/ui/Text';
 import { toast } from '@/components/ui/Toast';
 import { currentUserEmail, deleteCloudBackup, downloadBackup, sendEmailCode, uploadBackup, verifyEmailCode } from '@/services/ai/cloudBackup';
-import { isAiConfigured } from '@/services/ai/config';
+import { AI_CONFIG, isSupabaseConfigured } from '@/services/ai/config';
+import { testGeminiKey } from '@/services/ai/geminiDirect';
+import { AiUnavailableError } from '@/services/ai/protocol';
 import { signOutCloud } from '@/services/ai/supabase';
 import { getDb } from '@/services/database/db';
 import { restoreBackup } from '@/services/database/repositories';
+import { useAiKey } from '@/store/aiKey';
 import { useData } from '@/store/data';
 import { useSettings } from '@/store/settings';
+
+/** `Alert.alert` is a no-op on web, so destructive confirmations fall back to the browser's confirm dialog there. */
+function confirmDestructive(title: string, message: string, confirmLabel: string, onConfirm: () => void) {
+  if (Platform.OS === 'web') {
+    if (globalThis.confirm?.(`${title}
+
+${message}`)) onConfirm();
+    return;
+  }
+  Alert.alert(title, message, [
+    { text: 'Cancel', style: 'cancel' },
+    { text: confirmLabel, style: 'destructive', onPress: onConfirm },
+  ]);
+}
 
 export default function CloudSettings() {
   const settings = useSettings();
   const reload = useData((s) => s.reload);
-  const configured = isAiConfigured();
+  const configured = isSupabaseConfigured();
+  const hasKey = useAiKey((s) => s.hasKey);
+  const [keyDraft, setKeyDraft] = useState('');
   const [email, setEmail] = useState<string | null>(null);
   const [draftEmail, setDraftEmail] = useState('');
   const [code, setCode] = useState('');
@@ -44,28 +63,78 @@ export default function CloudSettings() {
   return (
     <Screen title="AI coach & cloud" subtitle="OPTIONAL · NEVER REQUIRED" showBack>
       <Note>
-        Everything important works with no account and no internet. These features are optional extras: an AI coach (Google Gemini, called only through your own Supabase Edge Function — the API key is never in the app) and a cross-device backup. Neither involves your Pokémon GO account.
+        Everything important works with no account and no internet. These features are optional extras: an AI coach (Google Gemini, using your own API key that stays on this device) and, optionally, a cross-device backup through your own Supabase project. Neither involves your Pokémon GO account.
       </Note>
 
-      <Card style={{ gap: 8 }}>
+      <Card style={{ gap: 10 }}>
         <View style={{ flexDirection: 'row', gap: 6 }}>
-          <Pill label={configured ? 'BACKEND CONFIGURED' : 'BACKEND NOT CONFIGURED'} tone={configured ? 'success' : 'warning'} />
+          <Pill label={hasKey ? 'GEMINI KEY SAVED ON THIS DEVICE' : 'NO GEMINI KEY'} tone={hasKey ? 'success' : 'warning'} />
         </View>
-        {!configured ? (
-          <Text variant="small" color="secondary">
-            Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY in a local .env file, deploy the gemini-coach Edge Function and add your GEMINI_API_KEY as a function secret. Step-by-step instructions are in DEVELOPMENT.md. Until then the assistant answers common questions offline.
-          </Text>
-        ) : (
-          <Text variant="small" color="secondary">Connected to your Supabase project. Guests get an anonymous session used only for rate limiting.</Text>
-        )}
+        <Text variant="small" color="secondary">
+          Paste your own Gemini API key (from Google AI Studio). It is stored only in this device’s secure storage — never in the app code, your backups or git — and is sent only to Google when you ask the coach something. Model: {AI_CONFIG.geminiModel} (falls back to {AI_CONFIG.geminiFallbackModel}). Without a key the assistant still answers common questions offline.
+        </Text>
+        <Field
+          label="GEMINI API KEY"
+          value={keyDraft}
+          onChangeText={setKeyDraft}
+          placeholder={hasKey ? '•••••••• saved — paste a new key to replace it' : 'Paste your key'}
+          secureTextEntry
+          autoCapitalize="none"
+          autoCorrect={false}
+          autoComplete="off"
+          testID="gemini-key-input"
+        />
+        <Button
+          label="Save & test key"
+          loading={busy === 'key'}
+          disabled={keyDraft.trim().length < 20}
+          testID="gemini-key-save"
+          onPress={() =>
+            run('key', async () => {
+              await useAiKey.getState().save(keyDraft);
+              try {
+                const model = await testGeminiKey(useAiKey.getState().key ?? '');
+                setKeyDraft('');
+                toast.success(`Key works (${model}). Saved on this device.`);
+              } catch (e) {
+                // Rejected keys must not stay saved; quota/offline errors mean the key itself may be fine.
+                if (e instanceof AiUnavailableError && e.reason === 'not-configured') {
+                  await useAiKey.getState().clear();
+                  throw e;
+                }
+                setKeyDraft('');
+                toast.info(`Key saved, but the test could not finish: ${e instanceof Error ? e.message : 'unknown error'}`);
+              }
+            })
+          }
+        />
+        {hasKey ? (
+          <Button
+            label="Remove key from this device"
+            variant="destructive"
+            size="sm"
+            testID="gemini-key-remove"
+            onPress={() =>
+              confirmDestructive('Remove the Gemini key?', 'The AI coach stops working until you add a key again.', 'Remove', () => void useAiKey.getState().clear())
+            }
+          />
+        ) : null}
+        <View style={{ flexDirection: 'row', gap: 6 }}>
+          <Pill label={configured ? 'SUPABASE (OPTIONAL): CONNECTED' : 'SUPABASE (OPTIONAL): NOT SET UP'} tone="neutral" />
+        </View>
+        <Text variant="small" color="secondary">
+          {configured
+            ? 'A Supabase project is configured: it is used for cloud backup, and for the coach only when no key is saved on this device.'
+            : 'Supabase is only needed for cloud backup or if you would rather keep the Gemini key on a server. See DEVELOPMENT.md.'}
+        </Text>
         <SwitchRow label="Enable the AI coach" description="Turn off to never contact the AI backend" value={settings.aiEnabled} onChange={(v) => settings.set({ aiEnabled: v })} />
         <SwitchRow
           label="Allow cloud screenshot analysis"
-          description="Explicit consent: a downscaled copy of a screenshot you choose is sent to your Gemini backend to read CP/moves/IVs. Not stored. You still review every field."
+          description="Explicit consent: a downscaled copy of a screenshot you choose is sent to Google Gemini to read CP/moves/IVs. Not stored. You still review every field."
           value={settings.aiScreenshotConsent}
           onChange={(v) => {
             if (!v) return settings.set({ aiScreenshotConsent: false });
-            Alert.alert('Send screenshots to the cloud?', 'When you choose “Analyse with AI” on a screenshot, the image is sent to your configured Supabase Edge Function and Google Gemini. Do not use it on screenshots with personal information. You can turn this off any time.', [
+            Alert.alert('Send screenshots to the cloud?', 'When you choose “Analyse with AI” on a screenshot, the image is sent to Google Gemini. Do not use it on screenshots with personal information. You can turn this off any time.', [
               { text: 'Cancel', style: 'cancel' },
               { text: 'I agree', onPress: () => settings.set({ aiScreenshotConsent: true }) },
             ]);
@@ -76,7 +145,7 @@ export default function CloudSettings() {
       <SectionHeader title="FREE-TIER LIMITS" />
       <Card style={{ gap: 6 }}>
         <Text variant="small" color="secondary">
-          The coach defaults to a Gemini Flash model, which Google offers on a free tier with low per-minute and per-day request limits that change over time (Google publishes live numbers only in AI Studio). The Edge Function also enforces its own limit per user (default 20 requests/hour, 120/day). One question can use 2–4 requests (tool rounds + the final formatted answer). When a limit is hit, the app says so and falls back to on-device answers.
+          The coach defaults to the Gemini Flash-Lite model, which Google offers on a free tier with low per-minute and per-day request limits that change over time (Google publishes live numbers only in AI Studio). The app only waits a moment between requests; Google enforces the real limit. One question can use 2–4 requests (tool rounds + the final formatted answer). When a limit is hit, the app says so and falls back to on-device answers.
         </Text>
       </Card>
 

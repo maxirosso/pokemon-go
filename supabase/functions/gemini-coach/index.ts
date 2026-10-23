@@ -9,14 +9,14 @@
 //  - returns only the model content + quota info
 //
 // Deploy:  supabase functions deploy gemini-coach
-// Secrets: supabase secrets set GEMINI_API_KEY=... [GEMINI_MODEL=gemini-2.5-flash] [AI_HOURLY_LIMIT=20] [AI_DAILY_LIMIT=120]
+// Secrets: supabase secrets set GEMINI_API_KEY=... [GEMINI_MODEL=gemini-2.5-flash-lite] [AI_HOURLY_LIMIT=20] [AI_DAILY_LIMIT=120]
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import tools from '../_shared/tools.json' with { type: 'json' };
 
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY') ?? '';
-const MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-2.5-flash';
-const FALLBACK_MODEL = Deno.env.get('GEMINI_FALLBACK_MODEL') ?? 'gemini-2.5-flash-lite';
+const MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-2.5-flash-lite';
+const FALLBACK_MODEL = Deno.env.get('GEMINI_FALLBACK_MODEL') ?? 'gemini-2.5-flash';
 const HOURLY = Number(Deno.env.get('AI_HOURLY_LIMIT') ?? '20');
 const DAILY = Number(Deno.env.get('AI_DAILY_LIMIT') ?? '120');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';

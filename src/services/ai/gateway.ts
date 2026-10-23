@@ -1,20 +1,27 @@
-import { AI_CONFIG, isAiConfigured } from './config';
+import { getDeviceApiKey } from '@/store/aiKey';
+import { AI_CONFIG, isAiConfigured, isSupabaseConfigured } from './config';
+import { callGeminiDirect } from './geminiDirect';
 import { AiUnavailableError, type CoachRequest, type CoachResponse } from './protocol';
 import { getAccessToken } from './supabase';
 
 let lastCall = 0;
 
 /**
- * Single choke point to the backend. Maps every failure mode to an `AiUnavailableError` with a friendly
+ * Single choke point to the AI service (Gemini directly with the on-device key, or the optional Supabase function). Maps every failure mode to an `AiUnavailableError` with a friendly
  * reason so the UI can show an informative fallback instead of a stack trace.
  */
 export async function callCoach(req: CoachRequest, signal?: AbortSignal): Promise<CoachResponse> {
   if (!isAiConfigured()) {
-    throw new AiUnavailableError('The AI coach is not configured (no Supabase backend URL).', 'not-configured');
+    throw new AiUnavailableError('The AI coach is not set up. Add your Gemini API key in Settings → AI coach.', 'not-configured');
   }
   const wait = lastCall + AI_CONFIG.minIntervalMs - Date.now();
   if (wait > 0) await new Promise((r) => setTimeout(r, wait));
   lastCall = Date.now();
+
+  // Preferred path: the user's own key on this device, calling Gemini directly.
+  const deviceKey = getDeviceApiKey();
+  if (deviceKey) return callGeminiDirect(req, deviceKey, signal);
+  if (!isSupabaseConfigured()) throw new AiUnavailableError('The AI coach is not set up. Add your Gemini API key in Settings → AI coach.', 'not-configured');
 
   const token = await getAccessToken().catch(() => null);
   if (!token) throw new AiUnavailableError('Could not start a guest session with the backend.', 'server');

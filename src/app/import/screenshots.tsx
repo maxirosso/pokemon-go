@@ -12,6 +12,7 @@ import { Card } from '@/components/ui/Surface';
 import { Text } from '@/components/ui/Text';
 import { toast } from '@/components/ui/Toast';
 import { isAiConfigured } from '@/services/ai/config';
+import { useAiKey } from '@/store/aiKey';
 import { AiUnavailableError } from '@/services/ai/protocol';
 import { analyzeScreenshotCloud } from '@/services/ai/vision';
 import { isOcrAvailable } from '@/services/ocr/ocr';
@@ -27,6 +28,7 @@ export default function ImportScreenshots() {
   const ref = useReference((s) => s.ref);
   const consent = useSettings((s) => s.aiScreenshotConsent);
   const aiEnabled = useSettings((s) => s.aiEnabled);
+  useAiKey((s) => s.hasKey);
   const cloudReady = isAiConfigured() && aiEnabled && consent;
   const ocr = isOcrAvailable();
   const done = items.filter((i) => i.status === 'done').length;
